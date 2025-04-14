@@ -1,0 +1,18 @@
+[package]
+name = "impl_ops_cmp"
+version = "0.0.1" # change with html_root_url in lib.rs
+edition = "2021"
+authors = ["nomissbowling <nomissbowling@yahoo.co.jp>"]
+
+description = "impl_ops_cmp Macros for easy operator overloading without Copy derive."
+keywords = ["operators", "op", "ops", "overload", "overloading"]
+categories = ["rust-patterns"]
+license = "MIT"
+
+documentation = "https://docs.rs/impl_ops_cmp/"
+homepage = "https://crates.io/crates/impl_ops_cmp"
+repository = "https://github.com/nomissbowling/impl_ops_cmp"
+
+readme = "README.md"
+
+[dependencies]
