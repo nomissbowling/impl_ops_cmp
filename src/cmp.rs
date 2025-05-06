@@ -22,14 +22,35 @@ macro_rules! impl_ops_cmp {
       /// partial_cmp &amp;mut $t - &amp;$u
       #[inline]
       fn partial_cmp(&self, rhs: &&'b $u) -> Option<Ordering> {
-        let c = self.$method(*rhs) * $sgn;
-        if c == 0 { Some(Ordering::Equal) }
-        else if c < 0 { Some(Ordering::Less) }
-        else if c > 0 { Some(Ordering::Greater) }
-        else { None }
+        (self.$method(*rhs) * $sgn).partial_cmp(&0)
+//        let c = self.$method(*rhs) * $sgn;
+//        if c == 0 { Some(Ordering::Equal) }
+//        else if c < 0 { Some(Ordering::Less) }
+//        else if c > 0 { Some(Ordering::Greater) }
+//        else { None }
       }
     }
 */
+    /// impl $imp&lt;$u&gt; for &amp;mut $t
+    /// - expect $imp as PartialEq or Eq
+    impl<'a> $imp<$u> for &'a mut $t {
+      /// eq &amp;mut $t == $u
+      #[inline]
+      fn eq(&self, rhs: &$u) -> bool {
+        self.$method(rhs) == 0
+      }
+    }
+
+    /// impl $imo&lt;$u&gt; for &amp;mut $t
+    /// - expect $imo as PartialOrd
+    impl<'a> $imo<$u> for &'a mut $t {
+      /// partial_cmp &amp;mut $t - $u
+      #[inline]
+      fn partial_cmp(&self, rhs: &$u) -> Option<Ordering> {
+        (self.$method(rhs) * $sgn).partial_cmp(&0)
+      }
+    }
+
     /// impl $imp&lt;$u&gt; for $t
     /// - expect $imp as PartialEq or Eq
     impl $imp<$u> for $t {
@@ -46,11 +67,7 @@ macro_rules! impl_ops_cmp {
       /// partial_cmp $t - $u
       #[inline]
       fn partial_cmp(&self, rhs: &$u) -> Option<Ordering> {
-        let c = self.$method(rhs) * $sgn;
-        if c == 0 { Some(Ordering::Equal) }
-        else if c < 0 { Some(Ordering::Less) }
-        else if c > 0 { Some(Ordering::Greater) }
-        else { None }
+        (self.$method(rhs) * $sgn).partial_cmp(&0)
       }
     }
   };
@@ -67,7 +84,8 @@ macro_rules! impl_ops_cmp_p {
       /// eq &amp;mut $t == $u
       #[inline]
       fn eq(&self, rhs: &$u) -> bool {
-        self.$method(*rhs) == 0
+        // not use self.eq to avoid recursion infinite
+        <$t>::eq(self, rhs)
       }
     }
 
@@ -77,11 +95,8 @@ macro_rules! impl_ops_cmp_p {
       /// partial_cmp &amp;mut $t - $u
       #[inline]
       fn partial_cmp(&self, rhs: &$u) -> Option<Ordering> {
-        let c = self.$method(*rhs) * $sgn;
-        if c == 0 { Some(Ordering::Equal) }
-        else if c < 0 { Some(Ordering::Less) }
-        else if c > 0 { Some(Ordering::Greater) }
-        else { None }
+        // not use self.partial_cmp to avoid recursion infinite
+        <$t>::partial_cmp(self, rhs)
       }
     }
 
@@ -91,7 +106,8 @@ macro_rules! impl_ops_cmp_p {
       /// eq &amp;$t == $u
       #[inline]
       fn eq(&self, rhs: &$u) -> bool {
-        self.$method(*rhs) == 0
+        // not use self.eq to avoid recursion infinite
+        <$t>::eq(self, rhs)
       }
     }
 
@@ -101,11 +117,8 @@ macro_rules! impl_ops_cmp_p {
       /// partial_cmp &amp;$t - $u
       #[inline]
       fn partial_cmp(&self, rhs: &$u) -> Option<Ordering> {
-        let c = self.$method(*rhs) * $sgn;
-        if c == 0 { Some(Ordering::Equal) }
-        else if c < 0 { Some(Ordering::Less) }
-        else if c > 0 { Some(Ordering::Greater) }
-        else { None }
+        // not use self.partial_cmp to avoid recursion infinite
+        <$t>::partial_cmp(self, rhs)
       }
     }
 
@@ -125,15 +138,11 @@ macro_rules! impl_ops_cmp_p {
       /// partial_cmp $t - $u
       #[inline]
       fn partial_cmp(&self, rhs: &$u) -> Option<Ordering> {
-        let c = self.$method(*rhs) * $sgn;
-        if c == 0 { Some(Ordering::Equal) }
-        else if c < 0 { Some(Ordering::Less) }
-        else if c > 0 { Some(Ordering::Greater) }
-        else { None }
+        (self.$method(*rhs) * $sgn).partial_cmp(&0)
       }
     }
 
-    impl_ops_cmp_q!{impl $imp, $imo, $method for $u, $t, -$sgn}
+    impl_ops_cmp_q!{impl $imp, $imo, for $u, $t}
   };
 }
 pub use impl_ops_cmp_p;
@@ -141,14 +150,14 @@ pub use impl_ops_cmp_p;
 /// impl_ops_cmp_q without Copy derive
 #[macro_export]
 macro_rules! impl_ops_cmp_q {
-  (impl $imp:ident, $imo:ident, $method:ident for $t:ty, $u:ty, $sgn:expr) => {
+  (impl $imp:ident, $imo:ident, for $t:ty, $u:ty) => {
     /// impl $imp&lt;&amp;mut $u&gt; for $t
     /// - expect $imp as PartialEq or Eq
     impl<'a> $imp<&'a mut $u> for $t {
       /// eq $t == &amp;mut $u
       #[inline]
       fn eq(&self, rhs: &&'a mut $u) -> bool {
-        (*rhs).$method(*self) == 0
+        (*rhs).eq(self)
       }
     }
 
@@ -158,11 +167,7 @@ macro_rules! impl_ops_cmp_q {
       /// partial_cmp $t - &amp;mut $u
       #[inline]
       fn partial_cmp(&self, rhs: &&'a mut $u) -> Option<Ordering> {
-        let c = (*rhs).$method(*self) * $sgn;
-        if c == 0 { Some(Ordering::Equal) }
-        else if c < 0 { Some(Ordering::Less) }
-        else if c > 0 { Some(Ordering::Greater) }
-        else { None }
+        (*rhs).partial_cmp(self).map(Ordering::reverse)
       }
     }
 
@@ -172,7 +177,7 @@ macro_rules! impl_ops_cmp_q {
       /// eq $t == &amp;$u
       #[inline]
       fn eq(&self, rhs: &&'a $u) -> bool {
-        (*rhs).$method(*self) == 0
+        (*rhs).eq(self)
       }
     }
 
@@ -182,11 +187,7 @@ macro_rules! impl_ops_cmp_q {
       /// partial_cmp $t - &amp;$u
       #[inline]
       fn partial_cmp(&self, rhs: &&'a $u) -> Option<Ordering> {
-        let c = (*rhs).$method(*self) * $sgn;
-        if c == 0 { Some(Ordering::Equal) }
-        else if c < 0 { Some(Ordering::Less) }
-        else if c > 0 { Some(Ordering::Greater) }
-        else { None }
+        (*rhs).partial_cmp(self).map(Ordering::reverse)
       }
     }
 
@@ -196,7 +197,7 @@ macro_rules! impl_ops_cmp_q {
       /// eq $t == $u
       #[inline]
       fn eq(&self, rhs: &$u) -> bool {
-        rhs.$method(*self) == 0
+        rhs.eq(self)
       }
     }
 
@@ -206,11 +207,7 @@ macro_rules! impl_ops_cmp_q {
       /// partial_cmp $t - $u
       #[inline]
       fn partial_cmp(&self, rhs: &$u) -> Option<Ordering> {
-        let c = rhs.$method(*self) * $sgn;
-        if c == 0 { Some(Ordering::Equal) }
-        else if c < 0 { Some(Ordering::Less) }
-        else if c > 0 { Some(Ordering::Greater) }
-        else { None }
+        rhs.partial_cmp(self).map(Ordering::reverse)
       }
     }
   };

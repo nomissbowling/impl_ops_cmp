@@ -1,4 +1,4 @@
-#![doc(html_root_url = "https://docs.rs/impl_ops_cmp/0.0.1")]
+#![doc(html_root_url = "https://docs.rs/impl_ops_cmp/0.0.2")]
 //! impl_ops_cmp Macros for easy operator overloading without Copy derive.
 //!
 //! # Links
